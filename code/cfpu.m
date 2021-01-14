@@ -1,27 +1,23 @@
-% load('bunny_h0.01.mat');
-% load('../fields/bunny_full_res.mat');
-% load('../fields/bunny_large_smooth_nrmls.mat');
-% load('../fields/bunny_large.mat')
-% load('../fields/tooth8_h0.10.mat')
-% load('frog');
-% load('happy_buddha.mat');
-% load('../fields/stanford_dragon_highres.mat');
-% load('../fields/stanford_dragon_fullres_face_nrmls.mat'); [xc,ia,ic] = unique(xc,'rows'); nrml = nrml(ia,:);
-% load('../fields/stanford_dragon_fullres_nrml30.mat'); [xc,ia,ic] = unique(xc,'rows'); nrml = nrml(ia,:);
-% load('../fields/happy_buddha_highres.mat');
-% load('../fields/homer.mat');
-% load('../fields/armadillo.mat');
-%load('../fields/mammoth_tooth.mat');
-% load('../fields/cantius_tooth.mat');
-% load('../fields/interlocked_tori_big.mat');
-% load('../fields/Laurent_Hand.mat');
-% load('../fields/raptor_head.mat');
-load('../fields/gargoyle.mat');
-% load('../fields/dancing_children.mat');
-% load('../fields/trefoil_N23064.mat');
-% load('../fields/trefoil_N6144.mat');
-% load('../fields/pump_carter.mat');
-% load('../fields/filigree.mat');
+% load('../ptclouds/bunny_large.mat')
+% load('../ptclouds/tooth8_h0.10.mat')
+% load('../ptclouds/frog.mat');
+% load('../ptclouds/happy_buddha.mat');
+% load('../ptclouds/stanford_dragon_fullres_face_nrmls.mat'); [xc,ia,ic] = unique(xc,'rows'); nrml = nrml(ia,:);
+% load('../ptclouds/happy_buddha_highres.mat');
+% load('../ptclouds/homer.mat');
+% load('../ptclouds/armadillo.mat');
+% load('../ptclouds/mammoth_tooth.mat');
+% load('../ptclouds/cantius_tooth.mat');
+% load('../ptclouds/interlocked_tori_big.mat');
+% load('../ptclouds/laurent_hand.mat');
+% load('../ptclouds/raptor.mat');
+load('../ptclouds/raptor_head.mat');
+% load('../ptclouds/pump_carter.mat');
+% load('../ptclouds/filigree.mat');
+% load('../ptclouds/gargoyle.mat');
+% load('../ptclouds/dancing_children.mat');
+% load('../ptclouds/trefoil_N23064.mat');
+% load('../ptclouds/trefoil_N6144.mat');
 
 x = xc;
 N = size(x,1);
@@ -38,8 +34,8 @@ N = size(x,1);
 
 nrml = nrml./(sqrt(sum(nrml.^2,2)));
 
-% Q = [0 0 1;1 0 0;0 1 0];
-Q = [0 0 1;-1 0 0;0 -1 0];
+Q = [0 0 1;1 0 0;0 1 0];
+% Q = [0 0 1;-1 0 0;0 -1 0];
 % Q = eye(3);
 x = x*Q';
 nrml = nrml*Q';
@@ -66,8 +62,8 @@ xx = (minx(1)-3*dx):dx:(maxx(1)+3*dx);
 yy = (minx(2)-3*dx):dx:(maxx(2)+3*dx);
 zz = (minx(3)-3*dx):dx:(maxx(3)+3*dx);
 
-minx2 = [0.2 0 0.4];    % Gargoyle zoom
-maxx2 = [0.5 0.4 0.9];
+% minx2 = [0.2 0 0.4];    % Gargoyle zoom
+% maxx2 = [0.5 0.4 0.9];
 % minx2 = [0.1 0.15 0.25];    % Children zoom
 % maxx2 = [0.3 0.35 0.45];
 % mm2 = 256-7;
@@ -85,10 +81,10 @@ m = length(xe);
 % trbl_bbox_max = [0.29 0.28 0.36];
 % trbl_id = all((x >= trbl_bbox_min) & (x <= trbl_bbox_max),2);
 
-% Bounding box for troublsome points for Gargoyle
-trbl_bbox_min = [0.36 0 0.63];
-trbl_bbox_max = [0.4 0.055 0.65];
-trbl_id = all((x >= trbl_bbox_min) & (x <= trbl_bbox_max),2);
+% % Bounding box for troublsome points for Gargoyle
+% trbl_bbox_min = [0.36 0 0.63];
+% trbl_bbox_max = [0.4 0.055 0.65];
+% trbl_id = all((x >= trbl_bbox_min) & (x <= trbl_bbox_max),2);
 
 % Number of nodes per patch
 % n = 100;  % Homer
@@ -109,24 +105,21 @@ if usekMeans
     [~,y] = kmeans(x,M,'Replicates',5);
     toc
 else
-%     load('../fields/happy_buddha_highres_patches.mat');
-%     load('../fields/bunny_patches_M848.mat');
-%     load('../fields/bunny_large_patches.mat');
-%     load('../fields/bunny_large_patches_N14472.mat');
-%     load('../fields/stanford_dragon_highres_patches_N14400.mat');
-%     load('../fields/armadillo_patches.mat');
-%     load('../fields/happy_buddha_highres_patches.mat');
-%     load('../fields/interlocked_tori_big_patches.mat');
-%     load('../fields/Laurent_Hand_Patches.mat');
-    load('../fields/gargoyle_patches.mat');
-%     load('../fields/dancing_children_patches.mat');
-%     load('../fields/trefoil_patches_M864.mat');
-%     load('../fields/homer_patches.mat');
-%     load('../fields/raptor_head_patches.mat');
-%     load('../fields/pump_carter_patches.mat');
-%     load('../fields/filigree_patches_M34178.mat');
-%     load('../fields/filigree_patches_M58715.mat')
-%     load('../fields/filigree_patches_M22168.mat')
+%     load('../ptclouds/happy_buddha_highres_patches.mat');
+%     load('../ptclouds/bunny_large_patches.mat');
+%     load('../ptclouds/stanford_dragon_fullres_patches_N14400.mat');
+%     load('../ptclouds/armadillo_patches.mat');
+%     load('../ptclouds/happy_buddha_highres_patches.mat');
+%     load('../ptclouds/interlocked_tori_big_patches.mat');
+%     load('../ptclouds/laurent_hand_patches.mat');
+%     load('../ptclouds/gargoyle_patches.mat');
+%     load('../ptclouds/dancing_children_patches.mat');
+%     load('../ptclouds/trefoil_patches_M864.mat');
+%     load('../ptclouds/homer_patches.mat');
+    load('../ptclouds/raptor_head_patches.mat');
+%     load('../ptclouds/raptor_patches.mat');
+%     load('../ptclouds/pump_carter_patches.mat');
+%     load('../ptclouds/filigree_patches.mat')
     y = y*Q';
     
     y = y - minxx;
@@ -177,7 +170,7 @@ toc
 %%
 % Fitting parameters:
 lambda = 1e-3;
-regularization = 2;
+regularization = 0;
 schurcmplmnt = 0;
 exactinterp = 1;
 regularizationi = 0;
@@ -470,11 +463,11 @@ material dull
 % view([-128 36]);    % cantius_tooth
 % view([90 0]);     % Knot & Filigree
 % view([100 -1]);   % Children
-view([123 6])     % Chidren zoom
+% view([123 6])     % Chidren zoom
 % view([93 4]);     % Bunny
 % view([78 3]);     % Carter
 % view([-59 1]);      % Gargoyle
-% view([-50 0]);      % Raptor
+view([-50 0]);      % Raptor
 % camlight headlight
 camlight('right','infinite')
 % camlight('headlight','infinite');  % Bunny
@@ -490,7 +483,7 @@ ax = axis;
 
 % axis([0.25 0.45 0 0.3 0.55 0.8]) % Gargoyle zoom
 % axis([0.25 0.45 0 0.25 0.55 0.73]) % Gargoyle zoom
-axis([0.1 0.27 0.18 0.35 0.28 0.45]) % Children zoom
+% axis([0.1 0.27 0.18 0.35 0.28 0.45]) % Children zoom
 
 % %%
 % fv = isosurface(X,Y,Z,g,0);
