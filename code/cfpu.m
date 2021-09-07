@@ -11,12 +11,12 @@
 % load('../ptclouds/interlocked_tori_big.mat');
 % load('../ptclouds/laurent_hand.mat');
 % load('../ptclouds/raptor.mat');
-load('../ptclouds/raptor_head.mat');
+% load('../ptclouds/raptor_head.mat');
 % load('../ptclouds/pump_carter.mat');
 % load('../ptclouds/filigree.mat');
 % load('../ptclouds/gargoyle.mat');
 % load('../ptclouds/dancing_children.mat');
-% load('../ptclouds/trefoil_N23064.mat');
+load('../ptclouds/trefoil_N23064.mat');
 % load('../ptclouds/trefoil_N6144.mat');
 
 x = xc;
@@ -34,9 +34,9 @@ N = size(x,1);
 
 nrml = nrml./(sqrt(sum(nrml.^2,2)));
 
-Q = [0 0 1;1 0 0;0 1 0];
+% Q = [0 0 1;1 0 0;0 1 0];
 % Q = [0 0 1;-1 0 0;0 -1 0];
-% Q = eye(3);
+Q = eye(3);
 x = x*Q';
 nrml = nrml*Q';
 
@@ -50,10 +50,10 @@ x = x./max(maxxx-minxx);
 
 % mm = 56;
 % mm = 512 - 7;
-mm = 436-7;
+% mm = 436-7;
 % mm = 384-7;
 % mm = 256-7;
-% mm = 160;
+mm = 160;
 dx = (maxx-minx)/mm;
 % [X, Y, Z] = meshgrid(linspace(minx(1)-dx(1),maxx(1)+dx(1),mm),linspace(minx(2)-dx(2),maxx(2)+dx(2),mm),linspace(minx(3)-dx(3),maxx(3)+dx(3),mm));
 % [X, Y, Z] = meshgrid(linspace(minx(1)-4*dx(1),maxx(1)+4*dx(1),mm),linspace(minx(2)-4*dx(2),maxx(2)+4*dx(2),mm),linspace(minx(3)-4*dx(3),maxx(3)+4*dx(3),mm));
@@ -114,9 +114,9 @@ else
 %     load('../ptclouds/laurent_hand_patches.mat');
 %     load('../ptclouds/gargoyle_patches.mat');
 %     load('../ptclouds/dancing_children_patches.mat');
-%     load('../ptclouds/trefoil_patches_M864.mat');
+    load('../ptclouds/trefoil_patches_M864.mat');
 %     load('../ptclouds/homer_patches.mat');
-    load('../ptclouds/raptor_head_patches.mat');
+%     load('../ptclouds/raptor_head_patches.mat');
 %     load('../ptclouds/raptor_patches.mat');
 %     load('../ptclouds/pump_carter_patches.mat');
 %     load('../ptclouds/filigree_patches.mat')
@@ -152,19 +152,19 @@ toc
 
 % Determine which evaluation nodes belong to which patch
 tic
-% [idxe,De] = rangesearch(xe,y,patchRad);
+[idxe,De] = rangesearch(xe,y,patchRad);
 [eval_vec,temp_De] = rangesearch(tree,xe,patchRad);
-idxe = cell(M,1);
-% De = cell(M,1);
-% temp_length = cellfun(@length,eval_vec);
-% id_length = find(id > 0);
-for j=1:m
-    id = eval_vec{j};
-    for k = 1:length(id)
-        idxe{id(k)} = [idxe{id(k)} j];
-%         De{id(k)} = [De{id(k)} temp_De{j}];
-    end
-end
+% idxe = cell(M,1);
+% % De = cell(M,1);
+% % temp_length = cellfun(@length,eval_vec);
+% % id_length = find(id > 0);
+% for j=1:m
+%     id = eval_vec{j};
+%     for k = 1:length(id)
+%         idxe{id(k)} = [idxe{id(k)} j];
+% %         De{id(k)} = [De{id(k)} temp_De{j}];
+%     end
+% end
 toc
 
 %%
@@ -198,7 +198,7 @@ lams = zeros(M,1);
 flags = lams;
 ns = zeros(M,1);
 % Loop over each patch and store local interpolant and Wendland function
-parfor k = 1:M
+for k = 1:M
 %     warning('off','MATLAB:nearlySingularMatrix')
     if mod(k,40) == 0
         fprintf('k = %d out of M = %d\n',k,M)
@@ -461,13 +461,13 @@ material dull
 % view([-90 4]);    % Armadillo
 % view([90 15]);   % Buddha 
 % view([-128 36]);    % cantius_tooth
-% view([90 0]);     % Knot & Filigree
+view([90 0]);     % Knot & Filigree
 % view([100 -1]);   % Children
 % view([123 6])     % Chidren zoom
 % view([93 4]);     % Bunny
 % view([78 3]);     % Carter
 % view([-59 1]);      % Gargoyle
-view([-50 0]);      % Raptor
+% view([-50 0]);      % Raptor
 % camlight headlight
 camlight('right','infinite')
 % camlight('headlight','infinite');  % Bunny

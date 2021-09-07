@@ -5,24 +5,24 @@ exactinterp = 1;
 
 %Define eta and zeta
 phi = @(r) r;
-% eta = @(r) r.^3;
-% zeta = @(r) 3*r;  order = 2;
-eta = @(r) -r;
-zeta = @(r) -1./r; order = 1;
+eta = @(r) r.^3;
+zeta = @(r) 3*r;  order = 2;
+% eta = @(r) -r;
+% zeta = @(r) -1./r; order = 1;
 
 
 NN = [6144 8664 11616 18816 23064 27744 32856]';
-load(sprintf('../fields/trefoil_N%04d.mat',131424));
+load(sprintf('../ptclouds/trefoil_N%04d.mat',131424));
 xe = xc;
 m = length(xe);
-load(sprintf('../fields/trefoil_patches_M%d',864));
+load(sprintf('../ptclouds/trefoil_patches_M%d',864));
 [~,nn_dist] = knnsearch(y,y,'k',2);
 H = max(nn_dist(:,2));
 delta = 3/4;
 patchRad = (1 + delta)*H/2;
 err = zeros(length(NN),2);
 for nn = 1:length(NN)
-    load(sprintf('../fields/trefoil_N%04d.mat',NN(nn)));
+    load(sprintf('../ptclouds/trefoil_N%04d.mat',NN(nn)));
     x = xc;
     N = size(x,1);
     nrml = nrml./(sqrt(sum(nrml.^2,2)));
