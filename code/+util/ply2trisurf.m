@@ -1,8 +1,5 @@
-function [ node_xyz, triangle_node ] = ply_to_tri_surface ( ply_filename )
-
-%*****************************************************************************80
-%
-%% PLY_TO_TRI_SURFACE converts data from a PLY file to TRI_SURFACE data.
+function [ node_xyz, triangle_node ] = ply2trisurf ( ply_filename )
+% ply2trisurf converts data from a PLY file to TRI_SURFACE data.
 %
 %  Discussion:
 %
@@ -13,9 +10,9 @@ function [ node_xyz, triangle_node ] = ply_to_tri_surface ( ply_filename )
 %
 %  Example:
 %
-%     [ node_xyz, triangle_node ] = ply_to_tri_surface ( 'cow.ply' );
+%     [ node_xyz, triangle_node ] = ply2trisurf( 'cow.ply' );
 %
-%     trisurf ( triangle_node', node_xyz(1,:), node_xyz(2,:), node_xyz(3,:) );
+%     trisurf(triangle_node',node_xyz(1,:),node_xyz(2,:),node_xyz(3,:));
 %
 %     colormap ( gray ); 
 %     axis equal;
