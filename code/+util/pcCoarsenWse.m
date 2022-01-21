@@ -2,7 +2,7 @@ function xc = pcCoarsenWse(x,M,area)
 % pcCoarsenWse Coarsens a 3D point cloud using Weighted Sample Elimination (WSE)
 % as implemented in Eliminate function of the cyCodeBase package.
 %
-% xc = pcCoarsenWse(x,M,area) coarsens the the point cloud x (stored as a
+% xc = pcCoarsenWse(x,M,area) coarsens the point cloud x (stored as a
 % N-by-3 array of doubles) to exactly M points. area is an estimate for the 
 % surface area of the object.
 %

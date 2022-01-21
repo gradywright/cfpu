@@ -2,7 +2,7 @@ function xc = pcCoarsenPoissonDisk(x,M)
 % pcCoarsenPoissonDisk Coarsens a 3D point cloud using Poisson Disk Sampling as 
 % implemented in PoissonPruning function of the VCGLIB package.
 %
-% xc = pcCoarsenPoissonDisk(x,M) coarsens the the point cloud x (stored as a
+% xc = pcCoarsenPoissonDisk(x,M) coarsens the point cloud x (stored as a
 % N-by-3 array of doubles) to approximately M points. Note that M is a very
 % rough a approximation for the size of the coarsened set.  Typically, the
 % coarsened point cloud has many more than M points.
