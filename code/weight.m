@@ -1,4 +1,12 @@
 function phi = weight(r,delta,k)
+% WEIGHT is the quadratic b-spline generator for the partition of unity  (PU)
+% weights. This is combined with Shepard's method to construct the PU weights.
+%
+% phi = weight(r,delta,k) is the univariate quadratic b-spline function
+% evaluated at the distance r, with support delta.  k=0 is the weight function
+% and k=1 is the derivative of the weight function with respect to r.
+
+% Copyright 2022 by Grady B. Wright
 
 % Quadratic b-spline
 r = r/delta;
@@ -17,18 +25,5 @@ elseif k == 1
 else
    error('PU Weight function error');
 end
-
-% b = 2;
-% r2 = r.^2;
-% 
-% if k == 0
-%    phi = exp(-b*r2./max(delta^2-r2,0));
-% elseif k == 1
-%    denom = max(delta^2-r2,0);
-% %    phi = (-2*delta^2*b)*(r.*exp(-b*r2./denom)./denom.^2);
-%    phi = (-2*delta^2*b)*(exp(-b*r2./denom)./denom.^2);
-% else
-%    error('PU Weight function error');
-% end
    
 end

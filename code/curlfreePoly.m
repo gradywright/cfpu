@@ -1,4 +1,15 @@
 function [CP,P] = curlfreePoly(x,l)
+% curlfreePoly Basis for curl-free polynomials up to degree l evaluated at x
+%
+% [CP,P] = curlfreePoly(x,l) Evaluates a basis for curl-free polynomials up to
+% degree l at the values in x.  Returns the results in CP, which has 3*n rows
+% and (l+1)*(l+2)*(l+2)/6-1 columns.  The kth 3-tuple of rows contains the
+% curl-free polynomial evaluated at the kth value of x.  P contains the
+% potentials for each curl-free polynomial evaluated at x.
+%
+% Note only degrees l = 1 and 2 are currently implemented.
+
+% Copyright 2022 by Grady B. Wright
 
 n = size(x,1);
 

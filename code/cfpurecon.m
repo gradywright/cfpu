@@ -1,4 +1,54 @@
 function [potential,X,Y,Z] = cfpurecon(x,nrml,y,kernelinfo,reginfo,gridsize)
+% CFPURECON Reconstructs a surface from a point cloud using the Curl-free
+% Partition of Unity (CFPU) method.
+%
+% [P,X,Y,Z] = CFPURECON(X,NRML,Y,KERNELINFO,REGINFO,GRIDSIZE) reconstructs a 
+% surface for the point cloud X using the normals NRML, and PU pathes Y.
+% KERNELINFO contains the information about the curl-free kernel to use, and
+% REGINFO specifies what regularization parameters should be used. GRIDSIZE
+% specifies the size of the background grid to use for the isosurface (marching 
+% cubes) extraction of the surface. This should be a 1-by-3 array [NX NY NZ]
+% where NX, NY, NZ specifiy the size of the grid in the X, Y, and Z directions,
+% respectively.  The larger these values, the crisper the surface will look, but
+% the more time the code will take.
+%
+% A level surface can be obtained using the code
+%       fv = isosurface(X,Y,Z,P,0);
+%       ptch = patch(fv);
+%       isonormals(X,Y,Z,P,ptch);
+%       daspect([1 1 1])
+%       view(3)
+%
+% The KERNELINFO structure should contain fields PHI, ETA, and ZETA. PHI is the
+% scalar RBF used construct the curl-free kernel.  ETA should be 1/r (dPHI/dr)
+% and ZETA = 1/r (dETA/dr).
+%
+% The REGINFO structure can contain following fields
+% exactinterp: specfies whether the point cloud should exactly interpolate the
+%              surface (if no regularization of the potential is used).
+%          0 - no exact interpolation           
+%          1 - enforce exact interpolation (default)
+% nrmlreg: sets the regularization used in the fit of the normals
+%          0 - no regularization (default)
+%          1 - use ridge regression (smoothing splines) with a specified value
+%              for the regularization parameter
+%          2 - use ridge regression with the reg. parameter chosen using GCV
+% nrmllambda: ridge regression parameter for the CF fit of the normals if
+%             nrmlreg=1. Should be a value >= 0.
+% potreg: sets the regularization used in the fit of the potential
+%          0 - no regularization (default)
+%          1 - use ridge regression (smoothing splines) with a specified value
+%              for the regularization parameter
+%          2 - use ridge regression with the reg. parameter chosen using GCV
+% potlambda: ridge regression parameter for the fit of the potential to the
+%            point cloud if potreg=1. Should be a value >= 0.
+%
+% Note that this code is faster than calling cfpufit and cfpuval, but the
+% fitting data is not stored.
+%
+% see also CFPUFIT and CFPUVAL
+
+% Copyright 2022 by Grady B. Wright
 
 % Shift and scale the points to fit in [0,1]^3;
 [minxx,maxxx] = bounds(x);
@@ -26,7 +76,7 @@ delta = 1;
 patchRad = (1 + delta)*H/2;
 
 % Determine which nodes belong to which patch
-idx = rangesearch(x,y,patchRad);
+[idx,nn_dist] = rangesearch(x,y,patchRad);
 % idx = rangesearch(tree,x,patchRad);
 % node_vec = cell(1,N);
 % for j=1:N
@@ -37,13 +87,8 @@ idx = rangesearch(x,y,patchRad);
 % end
 % idx = node_vec;
 
-% Fitting parameters:
-regularization = reginfo.regularization;
-lambda = reginfo.lambda;
-schurcmplmnt = reginfo.schurcmplmnt;
-exactinterp = reginfo.exactinterp;
-regularizationi = reginfo.regularizationi;
-lambdai = reginfo.lambdai;
+% Regularization parameters
+[exactinterp,nrmlreg,nrmllambda,nrmlschur,potreg,potlambda,trbl_id] = parseRegParams(reginfo);
 
 % Radial kernels to use
 eta = kernelinfo.eta;       % Curl-free 
@@ -80,8 +125,8 @@ idxe_patch = cell(1,M);
 patch_vec = cell(1,M);
 
 % Matrices/vectors that are used over and over again
-zm = zeros(l);
-zv = zm(:,1);
+% zm = zeros(l);
+% zv = zm(:,1);
 
 % Initialize PU weight functions and CFPU potentials
 Psi = cell(1,M);              % values for pum weight function on each patch
@@ -97,10 +142,8 @@ opts.SYM = true;
 
 % Loop over each patch and store local interpolant and Wendland function
 parfor k = 1:M
-%     if mod(k,40) == 0
-%         fprintf('k = %d out of M = %d\n',k,M)
-%     end
     id = idx{k};
+    h2 = max(nn_dist{k})^2;
     x_local = x(id,:);      % Grab nodes on patch
     xx_local = x_local(:,1).';
     xy_local = x_local(:,2).';
@@ -127,13 +170,9 @@ parfor k = 1:M
     A = zeros(3*n+l);
     eta_temp = eta(r);
     zeta_temp = zeta(r);
-    if regularization ~= 3
-        % Handle any potential singularities in zeta
-        zeta_temp(1:n+1:end) = 0;
-    else
-        % Handle any potential singularities in zeta
-        zeta_temp(r == 0) = 0;
-    end
+
+    % Handle any potential singularities in zeta
+    zeta_temp(1:n+1:end) = 0;
     
     dphi_xx = zeta_temp.*dx.^2+eta_temp;
     dphi_yy = zeta_temp.*dy.^2+eta_temp;
@@ -158,7 +197,26 @@ parfor k = 1:M
     A(1:3*n,3*n+1:end) = CFP;
     A(3*n+1:end,1:3*n) = CFPt;
     
-    if regularization == 1    % gcv regularization
+    if ( nrmlreg ~= 2 )
+        if ( nrmlreg == 1 )   % Manual regularization
+            A(1:3*n,1:3*n) = A(1:3*n,1:3*n) + 3*n*nrmllambda*eye(3*n);
+        elseif ( nrmlreg == 3 ) % Only regularize in local areas
+            if any(trbl_id(idx{k}))
+                A(1:3*n,1:3*n) = A(1:3*n,1:3*n) + 3*n*nrmllambda*eye(3*n);
+            end
+        end
+        % Compute the coefficients
+        if ( nrmlschur == 0 )  % Solve using standard Gaussian elimination
+            coeffs = linsolve(A,b,opts);
+            coeffsp = coeffs(3*n+1:end);
+            coeffs = coeffs(1:3*n);
+        else % Solve using Schur complement of the saddle point system
+            A = A(1:3*n,1:3*n);
+            b = b(1:3*n);
+            coeffsp = pinv(CFPt*(A\CFP))*(CFPt*(A\b));
+            coeffs = A\(b-CFP*coeffsp);
+        end
+    else % GCV regularization
         A = A(1:3*n,1:3*n);
         b = b(1:3*n);
         L = size(CFP,2);
@@ -174,35 +232,16 @@ parfor k = 1:M
         z = U'*w2;
         
         % Determine the parameter
-        [lam,~,flag,~] = fminbnd(@gcv_cost_phs3,-10,35,[],z,D,3*n);
-        lam = 3*n*exp(-lam);
-
+        % [lam,~,flag,~] = fminbnd(@gcvCostFunction,-10,35,[],z,D,3*n);
+        % lam = 3*n*exp(-lam);
+        [lam,~,flag,~] = fminbnd(@gcvCostFunction,-10,35,[],z,D,3/h2);
+        lam = 3/h2*exp(-lam);
+        
         A = A + lam*eye(3*n);
         
         % Compute the coefficients
         coeffs = F2*(U*(z./(D.^2 + lam)));
-        coeffsp = G1\(w1-F1'*(A*coeffs));       
-    else
-        if regularization == 2   % Manual regularization
-            A(1:3*n,1:3*n) = A(1:3*n,1:3*n) + 3*n*lambda*eye(3*n);
-        elseif regularization == 4
-            if any(trbl_id(idx{k}))
-                A(1:3*n,1:3*n) = A(1:3*n,1:3*n) + 3*n*lambda*eye(3*n);
-            end
-        end
-        % Compute the coefficients
-        if schurcmplmnt == 0
-%             coeffs = [A CFP;CFPt zm]\b;
-%             coeffs = A\b;
-            coeffs = linsolve(A,b,opts);
-            coeffsp = coeffs(3*n+1:end);
-            coeffs = coeffs(1:3*n);        
-        else
-            A = A(1:3*n,1:3*n);
-            b = b(1:3*n);
-            coeffsp = pinv(CFPt*(A\CFP))*(CFPt*(A\b));
-            coeffs = A\(b-CFP*coeffsp);
-        end
+        coeffsp = G1\(w1-F1'*(A*coeffs));
     end
     
     % Make things faster by setting temp variables.
@@ -212,14 +251,27 @@ parfor k = 1:M
 
     temp_potential_nodes = sum(eta_temp.*(dx.*coeffsx + dy.*coeffsy + dz.*coeffsz),2) + P*coeffsp;
     
-    if exactinterp
+    % Use a scalar RBF fit of the residual to correct the potential
+    if ( exactinterp ) 
+        % Append degree 0 polynomial
         P = ones(n,1);
         A = ones(n+1);
         A(1:n,1:n) = phi(r);
         A(end) = 0;
         b = [temp_potential_nodes;0];
-        if regularizationi == 1
+        if ( potreg ~= 2 )
+            if ( potreg == 1 )
+                A(1:n,1:n) = A(1:n,1:n) + n*potlambda*eye(n);
+            elseif ( potreg == 3 )
+                if any(trbl_id(idx{k}))
+                    A(1:n,1:n) = A(1:n,1:n) + n*potlambda*eye(n);
+                end
+            end
+            coeffs_correction = linsolve(A,b,opts);
+        else
             L = size(P,2);
+            b = b(1:n);
+            A = A(1:n,1:n);
             [F1,G1] = qr(P);
             F2 = F1(:,L+1:end);
             F1 = F1(:,1:L);
@@ -230,30 +282,22 @@ parfor k = 1:M
             [U,D,~] = svd(L');
             D = diag(D);
             z = U'*w2;
-
+            
             % Determine the parameter
-            [lam,~,flag,~] = fminbnd(@gcv_cost_phs3,-10,35,[],z,D,n);
-            lam = n*exp(-lam);
+            % [lam,~,flag,~] = fminbnd(@gcvCostFunction,-10,35,[],z,D,n);
+            % lam = n*exp(-lam);
+            [lam,~,flag,~] = fminbnd(@gcvCostFunction,-10,35,[],z,D,1/h2);
+            lam = (1/h2)*exp(-lam);
             A = A + lam*eye(n);
+
             % Compute the coefficients
             temp = F2*(U*(z./(D.^2 + lam)));
             coeffs_correction = [temp;G1\(w1-F1'*(A*temp))];
-        else
-            if regularizationi == 2
-                A = A + n*lambdai*eye(n);
-            elseif regularizationi == 4
-                if any(trbl_id(idx{k}))
-                    A = A + n*lambdai*eye(n);
-                end
-            end
-%             coeffs_correction = [A P;P.' 0]\[temp_potential_nodes;0];
-%             coeffs_correction = A\b;
-            coeffs_correction = linsolve(A,b,opts);
         end
-    else
+    else  % Use a linear fit of the residual to correct the potential
         P = [P(:,1:3) ones(n,1)];
         coeffs_correction = P\temp_potential_nodes;
-    end
+    end    
     
     coeffs_correction_const = coeffs_correction(end);
     coeffs_correction = coeffs_correction(1:end-1);
@@ -339,5 +383,48 @@ temp = sum(sparse(idxe_vec,patch_vec,vertcat(potential_local{:}),m,M),2);
 potential = nan(m,1);
 potential(i) = temp(i);
 potential = reshape(potential,size(X));
+
+end
+
+function [exactinterp,nrmlreg,nrmllam,nrmlschur,potreg,potlam,trbl_id] = parseRegParams(reginfo)
+
+% Default values for the regularization parameters
+exactinterp = 1;
+nrmlreg = 0;
+nrmllam = 0;
+nrmlschur = 0;
+trbl_id = cell(0);
+potreg = 0;
+potlam = 0;
+
+if ( isfield(reginfo,'exactinterp') )
+    exactinterp = reginfo.exactinterp;
+end
+
+if ( isfield(reginfo,'nrmlreg') )
+    nrmlreg = reginfo.nrmlreg;
+end
+
+if ( isfield(reginfo,'nrmlschur') )
+    nrmlschur = reginfo.nrmlschur;
+end
+
+if ( isfield(reginfo,'nrmllambda') )
+    nrmllam = reginfo.nrmllambda;
+end
+
+if ( nrmlreg == 3 )
+    if ( isfield(reginfo,'trbl_id') )
+        trbl_id = reginfo.trbl_id;
+    end
+end
+
+if ( isfield(reginfo,'potreg') )
+    potreg = reginfo.potreg;
+end
+
+if ( isfield(reginfo,'potlambda') )
+    potlam = reginfo.potlambda;
+end
 
 end

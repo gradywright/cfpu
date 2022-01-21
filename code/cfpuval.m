@@ -1,4 +1,28 @@
 function [potential,X,Y,Z] = cfpuval(puminfo,gridsize)
+% CFPUVAL Reconstructs a surface from a point cloud using the Curl-free
+% Partition of Unity (CFPU) method.
+%
+% [P,X,Y,Z] = CFPUVAL(PUMINFO,GRIDSIZE) reconstructs a surface for a point cloud
+% after it has been fit with CFPUFIT. PUMINFO is the structure generated from
+% CFPUFIT. GRIDSIZE specifies the size of the background grid to use for the
+% isosurface (marching cubes) extraction of the surface. This should be a 1-by-3
+% array [NX NY NZ] where NX, NY, NZ specifiy the size of the grid in the X, Y,
+% and Z directions, respectively.  The larger these values, the crisper the
+% surface will look, but the more time the code will take.
+%
+% A level surface can be obtained using the code
+%       fv = isosurface(X,Y,Z,P,0);
+%       ptch = patch(fv);
+%       isonormals(X,Y,Z,P,ptch);
+%       daspect([1 1 1])
+%       view(3)
+%
+% Note that this code should be used when the same fit of the point cloud is
+% to be reused.  Otherwise, one should just call cfpurecon directly
+%
+% see also CFPUFIT and CFPURECON
+
+% Copyright 2022 by Grady B. Wright
 
 % Local variables
 x = puminfo.x;
@@ -20,27 +44,8 @@ xx = startx:griddx:endx;
 yy = starty:griddx:endy;
 zz = startz:griddx:endz;
 [X, Y, Z] = meshgrid(xx,yy,zz);
-% % Flatten vectors
-% xe = [X(:) Y(:) Z(:)];
-% m = length(xe);
 [mmy,mmx,mmz] = size(X);
 m = mmx*mmy*mmz;
-
-% Determine which evaluation nodes belong to which patch
-% [idxe,De] = rangesearch(xe,y,patchRad);
-% [idxe,De] = determineGridsInPatches(y,X,Y,Z,patchRad,startx,dx);
-% [eval_vec,temp_De] = rangesearch(tree,xe,patchRad);
-% idxe = cell(M,1);
-% % De = cell(M,1);
-% % temp_length = cellfun(@length,eval_vec);
-% % id_length = find(id > 0);
-% for j=1:m
-%     id = eval_vec{j};
-%     for k = 1:length(id)
-%         idxe{id(k)} = [idxe{id(k)} j];
-% %         De{id(k)} = [De{id(k)} temp_De{j}];
-%     end
-% end
 
 % Radial kernels to use
 eta = puminfo.kernelinfo.eta;       % Curl-free 
@@ -51,8 +56,6 @@ order = puminfo.kernelinfo.order;   % Curl-free polynomial degree
 exactinterp = puminfo.reginfo.exactinterp;
 
 % Variables for sparse storage
-% idxe_vec = [idxe{:}]';
-% idxe_vec = vertcat(idxe{:});
 idxe_patch = cell(1,M);
 patch_vec = cell(1,M);
 
@@ -67,10 +70,6 @@ patchz = y(:,3);
 
 % Loop over each patch and store local interpolant and pum weight function
 parfor k = 1:M
-%     warning('off','MATLAB:nearlySingularMatrix')
-%     if mod(k,40) == 0
-%         fprintf('k = %d out of M = %d\n',k,M)
-%     end
     x_local = x(idxinfo(k).id,:); % Grab nodes on patch
     xx_local = x_local(:,1).';
     xy_local = x_local(:,2).';
@@ -99,12 +98,7 @@ parfor k = 1:M
     idxe_patch{k} = temp_idg;
     
     % Calculate the weight function on each patch center and store it
-%     temp = De{k}.'/patchRad;
-%     De = sqrt(sum((y(k,:)-xe_local).^2,2));
-%     Psi{k} = (max(1-De/patchRad,0));
-%     Psi{k} = (max(1-temp,0).^4).*(4*temp+1);
     Psi{k} = weight(De,patchRad,0);
-%     Psi{k} = weight(De,patchRad,0);
     
     mlocalx = length(xx);
     mlocaly = length(yy);
@@ -113,7 +107,6 @@ parfor k = 1:M
     yy = repmat(yy,[1 mlocalx mlocalz]);
     zz = repmat(zz,[mlocaly mlocalx 1]);
     xe_local = [xx(id) yy(id) zz(id)];
-%     xe_local = xe(idxe{k},:);      % Evaluation points on each patch
     mm = size(xe_local,1);         % Number of evaluation points
     if mm == 0
         continue
