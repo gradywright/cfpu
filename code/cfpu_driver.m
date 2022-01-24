@@ -1,14 +1,15 @@
 % ptcloud = 'trefoil'
-ptcloud = 'buddha'
+% ptcloud = 'buddha'
 % ptcloud = 'homer'
 % ptcloud = 'armadillo'
 % ptcloud = 'children'
-% ptcloud = 'dragon'
+ptcloud = 'dragon'
 % ptcloud = 'raptor_head'
 % ptcloud = 'filigree'
 % ptcloud = 'pump'
 % ptcloud = 'gargoyle'
 % ptcloud = 'bunny'
+% ptcloud = 'hand'
 
 switch ptcloud
     case 'trefoil'
@@ -21,7 +22,10 @@ switch ptcloud
 %         load('../ptclouds/happy_buddha.mat');
         load('../ptclouds/happy_buddha_highres.mat');
 %         load('../ptclouds/happy_buddha_highres_patches.mat');
-        load('../ptclouds/happy_buddha_highres_patches_M42861.mat');
+%         load('../ptclouds/happy_buddha_highres_patches_M42861.mat');
+        [~,d] = knnsearch(xc,xc,'k',2);
+        surface_area = length(xc)*mean(d(:,2))^2;
+        y = util.PcCoarsen3D(xc,42861,surface_area);
         Q = [0 0 1;1 0 0;0 1 0];
         vw = [90 15];
     case 'homer'
@@ -69,7 +73,10 @@ switch ptcloud
     case 'bunny'
         load('../ptclouds/bunny_large.mat')
         load('../ptclouds/bunny_large_patches.mat')
+%         load('../oldptclouds/bunny_h0.01.mat');
+%         load('../oldptclouds/bunny_smooth_patches_M1447.mat');
         Q = [0 0 1;1 0 0;0 1 0];
+%         Q = eye(3);
         vw = [93 4];
     case 'dragon'
         load('../ptclouds/stanford_dragon_fullres_face_nrmls.mat'); 
@@ -112,7 +119,34 @@ switch ptcloud
         Q = [0 0 1;1 0 0;0 1 0];
         vw = [93 4];
 end
+
+%%
+N = length(xc);
+% tic
+% [~,d] = knnsearch(xc,xc,'k',2);
+% surface_area = N*mean(d(:,2))^2;
+% y = util.PcCoarsen3D(xc,floor(N/15),surface_area);
+% toc
+tic
+Nc = floor(N/40);
+% Nc = 9000;
+y = util.pcCoarsenPoissonDisk(xc,Nc);
+% y = util.pcCoarsenWse(xc,Nc);
+toc
+[Nc length(y)]
 x = xc;
+
+tic
+nrml = util.pcComputeNormals(x,10,2);
+toc
+
+%%
+% id = randperm(N);
+% id = id(1:floor(N/4));
+% x = x(id,:);
+% nrml = nrml(id,:);
+
+%%
 
 % Add noise to the normals
 % id = 1:N;
@@ -131,17 +165,19 @@ nrml = nrml*Q';
 % mm = 56;
 % mm = 512 - 7;
 % mm = 436-7;
-mm = 384-7;
-% mm = 256-7;
+% mm = 384-7;
+mm = 256-7;
 % mm = 160;
 
 % Regularization parameters:
-reginfo.lambda = 1e-3;
-reginfo.regularization = 0;
-reginfo.schurcmplmnt = 0;
 reginfo.exactinterp = 1;
-reginfo.regularizationi = 0;
-reginfo.lambdai = 1e-4;
+reginfo.nrmlreg = 0;
+reginfo.nrmllambda = 1e-4;
+reginfo.potreg = 0; 
+reginfo.potlambda = 1e-2;
+
+% reginfo.regularizationi = 2;  % Regularization for Homer used for MGM paper
+% reginfo.lambdai = 1e1;
 
 % Kernels to use
 % RBFs to use
@@ -158,17 +194,17 @@ hold off
 daspect([1 1 1])
 
 %%
-tic
-puminfo = cfpufit(x,nrml,y,kernelinfo,reginfo);
-toc
-
-tic
-[potential,X,Y,Z] = cfpuval(puminfo,mm);
-toc
-
 % tic
-% [potential,X,Y,Z] = cfpurecon(x,nrml,y,kernelinfo,reginfo,mm);
+% puminfo = cfpufit(x,nrml,y,kernelinfo,reginfo);
 % toc
+% 
+% tic
+% [potential,X,Y,Z] = cfpuval(puminfo,mm);
+% toc
+
+tic
+[potential,X,Y,Z] = cfpurecon(x,nrml,y,kernelinfo,reginfo,mm);
+toc
 
 %%
 clf
@@ -243,6 +279,16 @@ ax = axis;
 % % axis(ax)
 % view(3)
 % axis off
+%%
+% verts = get(p, 'Vertices');
+% faces = get(p, 'Faces');
+% a = verts(faces(:, 2), :) - verts(faces(:, 1), :);
+% b = verts(faces(:, 3), :) - verts(faces(:, 1), :);
+% c = cross(a, b, 2);
+% area = 1/2 * sum(sqrt(sum(c.^2, 2)));
+% fprintf('\nThe surface area is %f\n\n', area);
+
+%%
 
 %%
 % ns = zeros(length(y),1);

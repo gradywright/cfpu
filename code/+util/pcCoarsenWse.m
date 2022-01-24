@@ -16,8 +16,9 @@ if nargin < 2
 end
 
 if nargin == 2
-    % Set the area to zero and let the cyCode estimate the value
-    area = 0;
+    % Estimate the surface area:
+    [~,d] = knnsearch(x,x,'k',2);
+    area = length(x)*mean(d(:,2))^2;
 end
 
 [N,d] = size(x);
