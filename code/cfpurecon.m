@@ -150,7 +150,7 @@ parfor k = 1:M
     xz_local = x_local(:,3).';
     n = size(x_local,1);        % Number of nodes on patch
     
-    [CFP,P] = curlfreePoly(x_local,order);
+    [CFP,P] = util.curlfreePoly(x_local,order);
     CFPt = CFP.';
     
     % Calculate the distance matrix between the nodes on each patch
@@ -232,9 +232,9 @@ parfor k = 1:M
         z = U'*w2;
         
         % Determine the parameter
-        % [lam,~,flag,~] = fminbnd(@gcvCostFunction,-10,35,[],z,D,3*n);
+        % [lam,~,flag,~] = fminbnd(@util.gcvCostFunction,-10,35,[],z,D,3*n);
         % lam = 3*n*exp(-lam);
-        [lam,~,flag,~] = fminbnd(@gcvCostFunction,-10,35,[],z,D,3/h2);
+        [lam,~,flag,~] = fminbnd(@util.gcvCostFunction,-10,35,[],z,D,3/h2);
         lam = 3/h2*exp(-lam);
         
         A = A + lam*eye(3*n);
@@ -352,7 +352,7 @@ parfor k = 1:M
         dz = (xe_local_batch(:,3) - xz_local);
         r = sqrt(dx.^2 + dy.^2 + dz.^2);
         
-        [~,P] = curlfreePoly(xe_local_batch,order);
+        [~,P] = util.curlfreePoly(xe_local_batch,order);
         
         temp_potential(idb) = sum(eta(r).*(dx.*coeffsx + dy.*coeffsy + dz.*coeffsz),2) + P*coeffsp;
 

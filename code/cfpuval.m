@@ -133,7 +133,7 @@ parfor k = 1:M
         dz = (xe_local_batch(:,3) - xz_local);
         r = sqrt(dx.^2 + dy.^2 + dz.^2);
         
-        [~,P] = curlfreePoly(xe_local_batch,order);
+        [~,P] = util.curlfreePoly(xe_local_batch,order);
         
         temp_potential(idb) = sum(eta(r).*(dx.*coeffsx + dy.*coeffsy + dz.*coeffsz),2) + P*coeffsp;
 
