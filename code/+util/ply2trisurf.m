@@ -258,9 +258,9 @@ function [ node_xyz, triangle_node ] = ply2trisurf ( ply_filename )
 %  Reopen the binary file as LITTLE_ENDIAN or BIG_ENDIAN.
 %
     if ( Format == 1 )
-      fid = fopen ( Path, 'r', 'ieee-le.l64' );
+      fid = fopen ( ply_filename, 'r', 'ieee-le.l64' );
     else
-      fid = fopen ( Path, 'r', 'ieee-be.l64' );
+      fid = fopen ( ply_filename, 'r', 'ieee-be.l64' );
     end
 %
 %  Find the end of the header again.
