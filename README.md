@@ -19,7 +19,7 @@ camlight('right','infinite'), axis off tight, set(gcf,'Color',[1 1 1])
 
 For more examples from [1] see [cpfu_ex.m](https://raw.github.com/gradywright/cfpu/master/cpfu_ex.m)
 
-The code also include MEX interface files to some useful point cloud utility functions from the [VCGLib Package](https://github.com/cnr-isti-vclab/vcglib) and [cyCodeBase Package](https://github.com/cemyuksel/cyCodeBase) that can be used in conjuction with the CFPU method.  You will need to download these libraries and compile the MEX files according to the instructions in the help text of the C++ mex files.
+The code also includes MEX interface files to some useful point cloud utility functions from the [VCGLib Package](https://github.com/cnr-isti-vclab/vcglib) and [cyCodeBase Package](https://github.com/cemyuksel/cyCodeBase) that can be used in conjuction with the CFPU method.  You will need to download these libraries and compile the MEX files according to the instructions in the help text of the C++ mex files.
 
 ## References:
 
