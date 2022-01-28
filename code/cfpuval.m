@@ -98,7 +98,7 @@ parfor k = 1:M
     idxe_patch{k} = temp_idg;
     
     % Calculate the weight function on each patch center and store it
-    Psi{k} = weight(De,patchRad,0);
+    Psi{k} = util.weight(De,patchRad,0);
     
     mlocalx = length(xx);
     mlocaly = length(yy);

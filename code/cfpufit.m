@@ -2,36 +2,27 @@ function puinfo = cfpufit(x,nrml,y,kernelinfo,reginfo)
 % CFPUFIT Fits a point cloud using the Curl-free Partition of Unity (CFPU)
 % method.
 %
-% PUINFO = CFPUFIT(X,NRML,Y,KERNELINFO,REGINFO) Determines the expansion
+% PUINFO = CFPUFIT(X,NRML,Y) Determines the expansion
 % coefficients (i.e. the fit) of the surface that fits the point cloud X using
-% the normals NRML, and PU pathes Y.  KERNELINFO contains the information about
-% the curl-free kernel to use, and REGINFO specifies what regularization
-% parameters should be used. This function can be used with CFPUVAL to
-% reconstruct a surface for the point cloud.
+% the normals NRML, and PU pathes Y.  
 %
-% The KERNELINFO structure should contain fields PHI, ETA, and ZETA. PHI is the
-% scalar RBF used construct the curl-free kernel.  ETA should be 1/r (dPHI/dr)
-% and ZETA = 1/r (dETA/dr).
-%
-% The REGINFO structure can contain following fields
-% exactinterp: specfies whether the point cloud should exactly interpolate the
-%              surface (if no regularization of the potential is used).
-%          0 - no exact interpolation           
-%          1 - enforce exact interpolation (default)
-% nrmlreg: sets the regularization used in the fit of the normals
-%          0 - no regularization (default)
-%          1 - use ridge regression (smoothing splines) with a specified value
-%              for the regularization parameter
-%          2 - use ridge regression with the reg. parameter chosen using GCV
-% nrmllambda: ridge regression parameter for the CF fit of the normals if
-%             nrmlreg=1. Should be a value >= 0.
-% potreg: sets the regularization used in the fit of the potential
-%          0 - no regularization (default)
-%          1 - use ridge regression (smoothing splines) with a specified value
-%              for the regularization parameter
-%          2 - use ridge regression with the reg. parameter chosen using GCV
-% potlambda: ridge regression parameter for the fit of the potential to the
-%            point cloud if potreg=1. Should be a value >= 0.
+% PUINFO = CFPUFIT(X,NRML,Y,KERNEL) Specifies what kernel should be used for
+% constructing the curl-free RBF and the scalar correction field. The KERNEL
+% structure should contain fields PHI, ETA, and ZETA. PHI is the scalar RBF used
+% construct the curl-free kernel. ETA should be 1/r (dPHI/dr) and ZETA = 1/r
+% (dETA/dr). The default is a order 1 polyharmonic spline for the curl-free RBF
+% and an order 1 polyharmonic spline for the scalar correction. This is given by
+% the code:
+%       kernel.phi = @(r) -r;
+%       kernel.eta = @(r) -r;
+%       kernel.zeta = @(r) -1./r; 
+%       kernel.order = 1;
+% The code for using an order 2 polyharmonic spline for the curl-free RBF and
+% order 2 polyharmonic spline for the scalar correction is given by the code:
+%       kernel.phi = @(r) r.^3;
+%       kernel.eta = @(r) r.^3;
+%       kernel.zeta = @(r) 3*r;  
+%       kernel.order = 2;
 %
 % Note that this code should be used when the same fit of the point cloud is
 % to be reused.  Otherwise, one should just call cfpurecon directly
@@ -39,6 +30,22 @@ function puinfo = cfpufit(x,nrml,y,kernelinfo,reginfo)
 % see also CFPUVAL and CFPURECON
 
 % Copyright 2022 by Grady B. Wright
+
+% Check input arguments
+if ( nargin < 3 )
+    error('Not enough input arguments.');
+elseif ( nargin == 3 )
+    % Default kernel is order 1 polyharmonic spline
+    kernelinfo.phi = @(r) -r;
+    kernelinfo.eta = @(r) -r;
+    kernelinfo.zeta = @(r) -1./r; 
+    kernelinfo.order = 1;
+    % Default is no regularization
+    reginfo.exactinterp = 1;
+elseif ( nargin == 4 )
+    % Default is no regularization
+    reginfo.exactinterp = 1;
+end
 
 % Shift and scale the points to fit in [0,1]^3;
 [minxx,maxxx] = bounds(x);

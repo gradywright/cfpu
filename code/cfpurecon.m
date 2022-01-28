@@ -1,16 +1,54 @@
-function [potential,X,Y,Z] = cfpurecon(x,nrml,y,kernelinfo,reginfo,gridsize)
+function [potential,X,Y,Z] = cfpurecon(x,nrml,y,gridsize,kernelinfo,reginfo)
 % CFPURECON Reconstructs a surface from a point cloud using the Curl-free
 % Partition of Unity (CFPU) method.
 %
-% [P,X,Y,Z] = CFPURECON(X,NRML,Y,KERNELINFO,REGINFO,GRIDSIZE) reconstructs a 
+% [P,X,Y,Z] = CFPURECON(X,NRML,Y,GRIDSIZE) reconstructs a 
 % surface for the point cloud X using the normals NRML, and PU pathes Y.
-% KERNELINFO contains the information about the curl-free kernel to use, and
-% REGINFO specifies what regularization parameters should be used. GRIDSIZE
-% specifies the size of the background grid to use for the isosurface (marching 
-% cubes) extraction of the surface. This should be a 1-by-3 array [NX NY NZ]
-% where NX, NY, NZ specifiy the size of the grid in the X, Y, and Z directions,
-% respectively.  The larger these values, the crisper the surface will look, but
-% the more time the code will take.
+% GRIDSIZE specifies the size of the background grid to use for the isosurface
+% (marching cubes) extraction of the surface. This should be a 1-by-3 array 
+% [NX NY NZ] where NX, NY, NZ specifiy the size of the grid in the X, Y, and Z
+% directions, respectively.  The larger these values, the crisper the surface
+% will look, but the more time the code will take.
+%
+% [P,X,Y,Z] = CFPURECON(X,NRML,Y,GRIDSIZE,KERNEL)
+% Specifies what kernel should be used for constructing the curl-free RBF and
+% the scalar correction field. The KERNEL structure should contain fields PHI,
+% ETA, and ZETA. PHI is the scalar RBF used construct the curl-free kernel. 
+% ETA should be 1/r (dPHI/dr) and ZETA = 1/r (dETA/dr). The default is a order 1
+% polyharmonic spline for the curl-free RBF and an order 1 polyharmonic spline
+% for the scalar correction. This is given by the code:
+%       kernel.phi = @(r) -r;
+%       kernel.eta = @(r) -r;
+%       kernel.zeta = @(r) -1./r; 
+%       kernel.order = 1;
+% The code for using an order 2 polyharmonic spline for the curl-free RBF and
+% order 2 polyharmonic spline for the scalar correction is given by the code:
+%       kernel.phi = @(r) r.^3;
+%       kernel.eta = @(r) r.^3;
+%       kernel.zeta = @(r) 3*r;  
+%       kernel.order = 2;
+%
+% [P,X,Y,Z] = CFPURECON(X,NRML,Y,GRIDSIZE,KERNEL,REGULARIZATION)
+% Specifies what regularization parameters should be used. The REGULARIZATION 
+% structure can contain following fields
+% exactinterp: specfies whether the point cloud should exactly interpolate the
+%       surface (if no regularization of the potential is used).
+%       0 - no exact interpolation           
+%       1 - enforce exact interpolation (default)
+% nrmlreg: sets the regularization used in the fit of the normals
+%       0 - no regularization (default)
+%       1 - use ridge regression (smoothing splines) with a specified value
+%           for the regularization parameter
+%       2 - use ridge regression with the reg. parameter chosen using GCV
+% nrmllambda: ridge regression parameter for the CF fit of the normals if
+%       nrmlreg=1. Should be a value >= 0.
+% potreg: sets the regularization used in the fit of the potential
+%       0 - no regularization (default)
+%       1 - use ridge regression (smoothing splines) with a specified value
+%           for the regularization parameter
+%       2 - use ridge regression with the reg. parameter chosen using GCV
+% potlambda: ridge regression parameter for the fit of the potential to the
+%       point cloud if potreg=1. Should be a value >= 0.
 %
 % A level surface can be obtained using the code
 %       fv = isosurface(X,Y,Z,P,0);
@@ -19,36 +57,28 @@ function [potential,X,Y,Z] = cfpurecon(x,nrml,y,kernelinfo,reginfo,gridsize)
 %       daspect([1 1 1])
 %       view(3)
 %
-% The KERNELINFO structure should contain fields PHI, ETA, and ZETA. PHI is the
-% scalar RBF used construct the curl-free kernel.  ETA should be 1/r (dPHI/dr)
-% and ZETA = 1/r (dETA/dr).
-%
-% The REGINFO structure can contain following fields
-% exactinterp: specfies whether the point cloud should exactly interpolate the
-%              surface (if no regularization of the potential is used).
-%          0 - no exact interpolation           
-%          1 - enforce exact interpolation (default)
-% nrmlreg: sets the regularization used in the fit of the normals
-%          0 - no regularization (default)
-%          1 - use ridge regression (smoothing splines) with a specified value
-%              for the regularization parameter
-%          2 - use ridge regression with the reg. parameter chosen using GCV
-% nrmllambda: ridge regression parameter for the CF fit of the normals if
-%             nrmlreg=1. Should be a value >= 0.
-% potreg: sets the regularization used in the fit of the potential
-%          0 - no regularization (default)
-%          1 - use ridge regression (smoothing splines) with a specified value
-%              for the regularization parameter
-%          2 - use ridge regression with the reg. parameter chosen using GCV
-% potlambda: ridge regression parameter for the fit of the potential to the
-%            point cloud if potreg=1. Should be a value >= 0.
-%
 % Note that this code is faster than calling cfpufit and cfpuval, but the
 % fitting data is not stored.
 %
 % see also CFPUFIT and CFPUVAL
 
 % Copyright 2022 by Grady B. Wright
+
+% Check input arguments
+if ( nargin < 4 )
+    error('Not enough input arguments.');
+elseif ( nargin == 4 )
+    % Default kernel is order 1 polyharmonic spline
+    kernelinfo.phi = @(r) -r;
+    kernelinfo.eta = @(r) -r;
+    kernelinfo.zeta = @(r) -1./r; 
+    kernelinfo.order = 1;
+    % Default is no regularization
+    reginfo.exactinterp = 1;
+elseif ( nargin == 5 )
+    % Default is no regularization
+    reginfo.exactinterp = 1;
+end
 
 % Shift and scale the points to fit in [0,1]^3;
 [minxx,maxxx] = bounds(x);
@@ -99,9 +129,9 @@ phi = kernelinfo.phi;       % Exact interpolation of potential
 order = kernelinfo.order;
 
 % Degree of the curl-free polynomial basis
-if order == 1
+if ( order == 1 )
     l = 3;
-elseif order == 2
+elseif ( order == 2 )
     l = 9;
 else
     error('Curl-free polynomial degree not supported, choose 1 or 2');
@@ -324,7 +354,7 @@ parfor k = 1:M
     idxe_patch{k} = temp_idg;
 
     % Calculate the weight function on each patch center and store it
-    Psi{k} = weight(De,patchRad,0);
+    Psi{k} = util.weight(De,patchRad,0);
 
     % Local grid points in the patch
     mlocalx = length(xx);
