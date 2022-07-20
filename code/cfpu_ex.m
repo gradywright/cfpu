@@ -257,7 +257,7 @@ normals = normals./sqrt(sum(normals.^2,2));
 % Grid size
 m = 300;
 % Reconstruct surface using CFPU
-[potential,X,Y,Z] = cfpurecon(ptcloud,normals,patches);
+[potential,X,Y,Z] = cfpurecon(ptcloud,normals,patches,m);
 % Plot the surface
 fv = isosurface(X,Y,Z,potential,0);
 p = patch(fv);
@@ -291,7 +291,7 @@ ptcloud = load('../ptclouds/bozbezbozzel.txt');
 % Generate the normals using VCGLIb (use 10 neighbors and no smoothing)
 normals = util.pcComputeNormals(ptcloud,10,0);
 % Generate the patches using VCGLIb (use N/30 as rough estimate for the number)
-patches = util.pcCoarsenPoissonDisk(ptcloud,ceil(length(ptcloud)/30));
+patches = util.pcCoarsenPoissonDisk(ptcloud,ceil(length(ptcloud)/10));
 % Grid size
 m = 300;
 % Reconstruct surface using CFPU

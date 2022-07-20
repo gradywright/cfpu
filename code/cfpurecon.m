@@ -98,24 +98,49 @@ patchx = y(:,1);
 patchy = y(:,2);
 patchz = y(:,3);
 
-% Determine the patch radius
+% Determine the inital patch radius
 tree = createns(y);
 [~,nn_dist] = knnsearch(tree,y,'k',2);
 H = max(nn_dist(:,2));
 delta = 1;
 patchRad = (1 + delta)*H/2;
 
-% Determine which nodes belong to which patch
-[idx,nn_dist] = rangesearch(x,y,patchRad);
+% Determine which nodes belong to which patch with the initial uniform patch
+% radius
+N = size(x,1);
+treex = createns(x);
+[idx,nn_dist] = rangesearch(treex,y,patchRad);
 % idx = rangesearch(tree,x,patchRad);
 % node_vec = cell(1,N);
 % for j=1:N
 %     id = idx{j};
 %     for k = 1:length(id)
-%         node_vec{id(k)} = [node_vec{id(k)} j];  
+%         node_vec{id(k)} = [node_vec{id(k)} j];
 %     end
 % end
 % idx = node_vec;
+
+% Loop over the patches to determine if any nodes were not included in the
+% patches.
+patchRad = patchRad*ones(M,1);
+nodeInPatch = zeros([N 1],'logical');
+for j = 1:M
+    nodeInPatch(idx{j}) = true;
+end
+
+% Adjust the patch radius in the patches closest to the missing nodes so that
+% these nodes are then included in the partition of unity.
+missingIds = find(~nodeInPatch);
+while ~isempty(missingIds)
+    [closestPatchId,p_dist] = knnsearch(tree,x(missingIds(1),:),'k',1);
+    temp_rad = 1.01*p_dist;
+    [temp_id,temp_dist] = rangesearch(treex,y(closestPatchId,:),temp_rad);
+    idx{closestPatchId} = temp_id{1};
+    nn_dist{closestPatchId} = temp_dist{1};
+    patchRad(closestPatchId) = temp_rad;
+    nodeInPatch(temp_id{1}) = true;
+    missingIds = find(~nodeInPatch);
+end
 
 % Regularization parameters
 [exactinterp,nrmlreg,nrmllambda,nrmlschur,potreg,potlambda,trbl_id] = parseRegParams(reginfo);
@@ -336,7 +361,7 @@ parfor k = 1:M
     ix = round((patchx(k)-startx)/griddx)+1;
     iy = round((patchy(k)-starty)/griddx)+1;
     iz = round((patchz(k)-startz)/griddx)+1;
-    factor = round(patchRad/griddx);
+    factor = round(patchRad(k)/griddx);
     ixs = max(ix-factor,1):min(ix+factor,mmx);
     iys = max(iy-factor,1):min(iy+factor,mmy);
     izs = max(iz-factor,1):min(iz+factor,mmz);
@@ -344,7 +369,7 @@ parfor k = 1:M
     yy = (starty+(iys-1)*griddx).';
     zz = shiftdim(startz+(izs-1)*griddx,-1);
     De = (patchx(k)-xx).^2 + (patchy(k)-yy).^2 + (patchz(k)-zz).^2;
-    id = De(:) < patchRad^2;
+    id = De(:) < patchRad(k)^2;
     ixs2 = repmat(ixs,[length(yy) 1 length(zz)]);
     iys2 = repmat(iys.',[1 length(xx) length(zz)]);
     izs2 = repmat(shiftdim(izs,-1),[length(yy) length(xx) 1]);
@@ -354,7 +379,7 @@ parfor k = 1:M
     idxe_patch{k} = temp_idg;
 
     % Calculate the weight function on each patch center and store it
-    Psi{k} = util.weight(De,patchRad,0);
+    Psi{k} = util.weight(De,patchRad(k),0);
 
     % Local grid points in the patch
     mlocalx = length(xx);

@@ -80,7 +80,7 @@ parfor k = 1:M
     ix = round((patchx(k)-startx)/griddx)+1;
     iy = round((patchy(k)-starty)/griddx)+1;
     iz = round((patchz(k)-startz)/griddx)+1;
-    factor = round(patchRad/griddx);
+    factor = round(patchRad(k)/griddx);
     ixs = max(ix-factor,1):min(ix+factor,mmx);
     iys = max(iy-factor,1):min(iy+factor,mmy);
     izs = max(iz-factor,1):min(iz+factor,mmz);
@@ -88,7 +88,7 @@ parfor k = 1:M
     yy = (starty+(iys-1)*griddx).';
     zz = shiftdim(startz+(izs-1)*griddx,-1);
     De = (patchx(k)-xx).^2 + (patchy(k)-yy).^2 + (patchz(k)-zz).^2;
-    id = De(:) < patchRad^2;
+    id = De(:) < patchRad(k)^2;
     ixs2 = repmat(ixs,[length(yy) 1 length(zz)]);
     iys2 = repmat(iys.',[1 length(xx) length(zz)]);
     izs2 = repmat(shiftdim(izs,-1),[length(yy) length(xx) 1]);
@@ -98,7 +98,7 @@ parfor k = 1:M
     idxe_patch{k} = temp_idg;
     
     % Calculate the weight function on each patch center and store it
-    Psi{k} = util.weight(De,patchRad,0);
+    Psi{k} = util.weight(De,patchRad(k),0);
     
     mlocalx = length(xx);
     mlocaly = length(yy);

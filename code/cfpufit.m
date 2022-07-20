@@ -57,15 +57,18 @@ y = y - minxx;
 y = y./max(maxxx-minxx);
 M = size(y,1);
 
-% Determine the patch radius
+% Determine the initial patch radius
 tree = createns(y);
 [~,nn_dist] = knnsearch(tree,y,'k',2);
 H = max(nn_dist(:,2));
 delta = 1;
 patchRad = (1 + delta)*H/2;
 
-% Determine which nodes belong to which patch
-[idx,nn_dist] = rangesearch(x,y,patchRad);
+% Determine which nodes belong to which patch with the initial uniform patch
+% radius
+N = size(x,1);
+treex = createns(x);
+[idx,nn_dist] = rangesearch(treex,y,patchRad);
 % idx = rangesearch(tree,x,patchRad);
 % node_vec = cell(1,N);
 % for j=1:N
@@ -75,6 +78,28 @@ patchRad = (1 + delta)*H/2;
 %     end
 % end
 % idx = node_vec;
+
+% Loop over the patches to determine if any nodes were not included in the
+% patches.
+patchRad = patchRad*ones(M,1);
+nodeInPatch = zeros([N 1],'logical');
+for j = 1:M
+    nodeInPatch(idx{j}) = true;
+end
+
+% Adjust the patch radius in the patches closest to the missing nodes so that
+% these nodes are then included in the partition of unity.
+missingIds = find(~nodeInPatch);
+while ~isempty(missingIds)
+    [closestPatchId,p_dist] = knnsearch(tree,x(missingIds(1),:),'k',1);
+    temp_rad = 1.01*p_dist;
+    [temp_id,temp_dist] = rangesearch(treex,y(closestPatchId,:),temp_rad);
+    idx{closestPatchId} = temp_id{1};
+    nn_dist{closestPatchId} = temp_dist{1};
+    patchRad(closestPatchId) = temp_rad;
+    nodeInPatch(temp_id{1}) = true;
+    missingIds = find(~nodeInPatch);
+end
 
 % Regularization parameters
 [exactinterp,nrmlreg,nrmllambda,nrmlschur,potreg,potlambda,trbl_id] = parseRegParams(reginfo);
