@@ -23,7 +23,7 @@ The code also includes MEX interface files to some useful point cloud utility fu
 
 ## References:
 
-[1] K. P. Drake, E. J. Fuselier, and G. B. Wright. Implicit Surface Reconstruction with a Curl-free Radial Basis Function Partition of Unity Method. [arXiv:2101.05940](https://arxiv.org/abs/2101.05940)
+[1] K. P. Drake, E. J. Fuselier, and G. B. Wright. Implicit Surface Reconstruction with a Curl-free Radial Basis Function Partition of Unity Method. SIAM J. Sci. Comput. 42, A3018-A3040 (2022) [arXiv:2101.05940](https://arxiv.org/abs/2101.05940)
 
 ## Acknowledgements 
 The examples use point cloud sets that were obtained from other sites, but stored as .mat files for convenience.  The Stanford Bunny, Happy Buddha, Stanford Dragon, and Armadillo data were obtained from the [Stanford University 3D Scanning Repository](http://graphics.stanford.edu/data/3Dscanrep/). The Homer, Raptor, Filigree, Pump Carter, Dancing Children, Gargoyle, and De Bozbezbozzel data were obtained from the [AIM@SHAPE-VISIONAIR Shape Repository](http://visionair.ge.imati.cnr.it).
