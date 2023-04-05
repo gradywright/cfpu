@@ -1,6 +1,6 @@
 # CFPU
 Curl-Free RBF Partition of Unity (**_CFPU_**) method for implicit surface reconstruction from oriented point clouds
-![ScreenShot](https://github.com/gradywright/cfpu/blob/main/ptcloud_ex.png)![ScreenShot](https://github.com/gradywright/cfpu/blob/main/cfpu_ex.png)
+![ScreenShot](https://github.com/gradywright/cfpu/blob/main/ptcloud_ex.png)![ScreenShot](https://github.com/gradywright/cfpu/blob/main/cfpu_ex.png)  
 
 This is a MATLAB implementation of the CFPU method described in [1].  The code can be used to produce an implicit (zero level-set) surface to an oriented point cloud - a point cloud consisting of points and (approximate) normals.
 
