@@ -17,7 +17,7 @@ daspect([1 1 1]), lighting phong, material dull, view([90 0]);
 camlight('right','infinite'), axis off tight, set(gcf,'Color',[1 1 1]) 
 ```
 
-For more examples from [1] see [cpfu_ex.m](https://raw.github.com/gradywright/cfpu/master/cpfu_ex.m)
+For more examples from [1] see [cfpu_ex.m](https://github.com/gradywright/cfpu/blob/4f5dd85b8d8b434e547315b003fd79b19cc61362/code/cfpu_ex.m)
 
 The code also includes MEX interface files to some useful point cloud utility functions from the [VCGLib Package](https://github.com/cnr-isti-vclab/vcglib) and [cyCodeBase Package](https://github.com/cemyuksel/cyCodeBase) that can be used in conjuction with the CFPU method.  You will need to download these libraries and compile the MEX files according to the instructions in the help text of the C++ mex files.
 
